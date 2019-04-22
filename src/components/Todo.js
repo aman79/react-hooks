@@ -1,12 +1,30 @@
-import React, { useState, useEffect, useReducer } from 'react';
+import React, { useState, useEffect, useReducer, useRef } from 'react';
 import axios from 'axios';
 
 const Todo = props => {
-	const [todoName, setTodoName] = useState('');
-	const [submittedTodo, setSubmittedTodo] = useState(null);
-	const [todoList, setTodoList] = useState([]);
+	//const [todoName, setTodoName] = useState('');
+	//const [submittedTodo, setSubmittedTodo] = useState(null);
+	//	const [todoList, setTodoList] = useState([]);
 
 	// const [todoState, setTodoState] = useState({ userInput: '', todoList: [] });
+
+	const todoInputRef = useRef();
+
+	const todoListReducer = (state, action) => {
+		switch (action.type) {
+			case 'ADD':
+				return state.concat(action.payload);
+			case 'SET':
+				return action.payload;
+			case 'REMOVE':
+				return state.filter(todo => todo.id !== action.payload);
+
+			default:
+				return state;
+		}
+	};
+
+	const [todoList, dispatch] = useReducer(todoListReducer, []);
 
 	useEffect(() => {
 		axios
@@ -20,27 +38,16 @@ const Todo = props => {
 						todos.push({ id: key, name: todoData[key].name });
 					}
 				}
-				setTodoList(todos);
+				//setTodoList(todos);
+				dispatch({ type: 'SET', payload: todos });
 			});
 
 		return () => {
 			console.log('Cleanup');
 		};
-	}, [todoName]);
+	}, []);
 	const mouseMoveHandler = event => {
-		console.log(event.clientX, event.clientY);
-	};
-
-	const todoListReducer = (state, action) => {
-		switch (action.type) {
-			case 'ADD':
-				return state.concat(action.payload);
-			case 'REMOVE':
-				return state.filter(todo => todo.id !== action.payload.id);
-
-			default:
-				return state;
-		}
+		//	console.log(event.clientX, event.clientY);
 	};
 
 	useEffect(() => {
@@ -50,19 +57,20 @@ const Todo = props => {
 		};
 	}, []);
 
-	useEffect(() => {
-		if (submittedTodo) {
-			setTodoList(todoList.concat(submittedTodo));
-		}
-	}, [submittedTodo]);
+	// useEffect(() => {
+	// 	if (submittedTodo) {
+	// 		//setTodoList(todoList.concat(submittedTodo));
+	// 		dispatch({ type: 'ADD', payload: submittedTodo });
+	// 	}
+	// }, [submittedTodo]);
 
-	const inputChangeHandler = event => {
-		setTodoName(event.target.value);
-		// setTodoState({
-		//   userInput: event.target.value,
-		//   todoList: todoState.todoList
-		// });
-	};
+	// const inputChangeHandler = event => {
+	// 	setTodoName(event.target.value);
+	// 	// setTodoState({
+	// 	//   userInput: event.target.value,
+	// 	//   todoList: todoState.todoList
+	// 	// });
+	// };
 
 	const addTodoHandler = () => {
 		//	setTodoList(todoList.concat(todoName));
@@ -71,6 +79,7 @@ const Todo = props => {
 		//   todoList: todoState.todoList.concat(todoState.userInput)
 		// });
 
+		const todoName = todoInputRef.current.value;
 		axios
 			.post('https://new-project-54039.firebaseio.com/todos.json', {
 				name: todoName
@@ -79,10 +88,22 @@ const Todo = props => {
 				setTimeout(() => {
 					const todoItem = { id: response.data.name, name: todoName };
 					//setTodoList(todoList.concat(todoItem));
-					setSubmittedTodo(todoItem);
+					//	setSubmittedTodo(todoItem);
+					dispatch({ type: 'ADD', payload: todoItem });
 				}, 3000);
 			})
 			.then(err => {
+				console.log(err);
+			});
+	};
+
+	const todoRemoveHandler = todoId => {
+		axios
+			.delete(`https://new-project-54039.firebaseio.com/todos/${todoId}.json`)
+			.then(res => {
+				dispatch({ type: 'REMOVE', payload: todoId });
+			})
+			.catch(err => {
 				console.log(err);
 			});
 	};
@@ -92,13 +113,16 @@ const Todo = props => {
 			<input
 				type='text'
 				placeholder='Todo'
-				onChange={inputChangeHandler}
-				value={todoName}
+				// onChange={inputChangeHandler}
+				// value={todoName}
+				ref={todoInputRef}
 			/>
 			<button onClick={addTodoHandler}>Add</button>
 			<ul>
 				{todoList.map(todo => (
-					<li key={todo.id}>{todo.name}</li>
+					<li key={todo.id} onClick={todoRemoveHandler.bind(this, todo.id)}>
+						{todo.name}
+					</li>
 				))}
 			</ul>
 		</React.Fragment>
