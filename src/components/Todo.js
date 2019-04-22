@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const Todo = props => {
 	const [todoName, setTodoName] = useState('');
+	const [submittedTodo, setSubmittedTodo] = useState(null);
 	const [todoList, setTodoList] = useState([]);
 
 	// const [todoState, setTodoState] = useState({ userInput: '', todoList: [] });
@@ -37,6 +38,12 @@ const Todo = props => {
 		};
 	}, []);
 
+	useEffect(() => {
+		if (submittedTodo) {
+			setTodoList(todoList.concat(submittedTodo));
+		}
+	}, [submittedTodo]);
+
 	const inputChangeHandler = event => {
 		setTodoName(event.target.value);
 		// setTodoState({
@@ -46,7 +53,7 @@ const Todo = props => {
 	};
 
 	const addTodoHandler = () => {
-		setTodoList(todoList.concat(todoName));
+		//	setTodoList(todoList.concat(todoName));
 		// setTodoState({
 		//   userInput: todoState.userInput,
 		//   todoList: todoState.todoList.concat(todoState.userInput)
@@ -57,7 +64,11 @@ const Todo = props => {
 				name: todoName
 			})
 			.then(response => {
-				console.log(response);
+				setTimeout(() => {
+					const todoItem = { id: response.data.name, name: todoName };
+					//setTodoList(todoList.concat(todoItem));
+					setSubmittedTodo(todoItem);
+				}, 3000);
 			})
 			.then(err => {
 				console.log(err);
